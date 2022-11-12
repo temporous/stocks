@@ -1,0 +1,7 @@
+*.pyc
+*.sqlite3
+__pycache
+.env.dev
+.python-version
+.mypy_cache/
+.pytest_cache/
