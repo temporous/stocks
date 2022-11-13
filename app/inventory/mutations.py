@@ -6,6 +6,7 @@ from graphene_django.types import ErrorType
 
 from inventory.models import Portfolio, PortfolioStocks, Trade
 from inventory.schema import nodes
+from inventory.trade_validation import PerformTrade, TradeError
 
 
 class CreatePortfolioForm(forms.ModelForm):
@@ -76,7 +77,15 @@ class BuyStock(DjangoModelFormMutation):
     def perform_mutate(cls, form, info):
         obj = form.save(commit=False)
         obj.trade_type = Trade.TradeTypes.BUY.value
+        errors = []
+        try:
+            with transaction.atomic():
         obj.save()
+                PerformTrade(obj)
+        except TradeError as e:
+            errors.append(ErrorType(field="trade", messages=[str(e)]))
+        if errors:
+            return cls(errors=errors)
         kwargs = {cls._meta.return_field_name: obj}
         return cls(errors=[], **kwargs)
 
@@ -91,7 +100,15 @@ class SellStock(DjangoModelFormMutation):
     def perform_mutate(cls, form, info):
         obj = form.save(commit=False)
         obj.trade_type = Trade.TradeTypes.SELL.value
+        errors = []
+        try:
+            with transaction.atomic():
         obj.save()
+                PerformTrade(obj)
+        except TradeError as e:
+            errors.append(ErrorType(field="trade", messages=[str(e)]))
+        if errors:
+            return cls(errors=errors)
         kwargs = {cls._meta.return_field_name: obj}
         return cls(errors=[], **kwargs)
 
