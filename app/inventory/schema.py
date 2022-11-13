@@ -31,6 +31,29 @@ def MetaFactory(a_model: Model, exclude: list[str] = []):
     return Meta
 
 
+# filter fields can be added here
+filter_field_settings_that_could_come_from_json_or_db: dict[str, dict] = dict(
+    PortfolioGrapheneNode=dict(
+        name=["exact", "istartswith", "icontains"],
+        portfolio_id=["exact"],
+    ),
+    StockGrapheneNode=dict(
+        symbol=["exact"],
+        iex_id=["exact"],
+        stock_id=["exact"],
+    ),
+)
+
+
+def InjectFilter(name: str, namespace: dict[str, Any]):
+    if extra_filters := filter_field_settings_that_could_come_from_json_or_db.get(name):
+        if meta := namespace.get("Meta"):
+            if filters := getattr(meta, "filter_fields"):
+                if isinstance(filters, dict):
+                    extra_filters = extra_filters | filters
+            meta.filter_fields = extra_filters
+
+
 # wrap in a function to get a metaclass factory with optional args
 class DjangoObjectsMeta(ObjectTypeMeta):
     """
@@ -45,6 +68,7 @@ class DjangoObjectsMeta(ObjectTypeMeta):
         **options: dict[Any, Any],
     ):
         # inject prior to creating class
+        InjectFilter(name, namespace)
         a_class = super().__new__(
             cls,
             name,
