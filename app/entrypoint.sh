@@ -13,5 +13,6 @@ fi
 
 python manage.py flush --no-input
 python manage.py migrate
+python manage.py load_stocks_from_file data/stock_symbols_data.json
 
 exec "$@"
