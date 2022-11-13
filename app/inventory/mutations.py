@@ -80,7 +80,7 @@ class BuyStock(DjangoModelFormMutation):
         errors = []
         try:
             with transaction.atomic():
-        obj.save()
+                obj.save()
                 PerformTrade(obj)
         except TradeError as e:
             errors.append(ErrorType(field="trade", messages=[str(e)]))
@@ -103,7 +103,7 @@ class SellStock(DjangoModelFormMutation):
         errors = []
         try:
             with transaction.atomic():
-        obj.save()
+                obj.save()
                 PerformTrade(obj)
         except TradeError as e:
             errors.append(ErrorType(field="trade", messages=[str(e)]))
@@ -113,3 +113,8 @@ class SellStock(DjangoModelFormMutation):
         return cls(errors=[], **kwargs)
 
 
+class InventoryMutation(graphene.ObjectType):
+    create_portfolio = CreatePortfolio.Field()
+    buy_stock = BuyStock.Field()
+    sell_stock = SellStock.Field()
+    update_portfolio = UpdatePortfolio.Field()
