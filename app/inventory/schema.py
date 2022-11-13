@@ -113,3 +113,33 @@ class ObjectType(BaseObjectType, metaclass=OtherObjectsMeta):
     """
 
     pass
+
+
+def node_name_from_model(a_model: Model, suffix: str = "GrapheneNode"):
+    return a_model.__name__ + suffix
+
+
+def node_factory(models: list[Model]) -> Generator[BaseDjangoObjectType, None, None]:
+    for a_model in models:
+        yield a_model, DjangoObjectsMeta(
+            node_name_from_model(a_model),
+            (BaseDjangoObjectType,),
+            dict(Meta=MetaFactory(a_model)),
+        )
+
+
+def query_factory(name: str, nodes: Iterator[BaseDjangoObjectType]) -> ObjectType:
+    endpoints = {}
+
+    for node in nodes:
+        endpoints = endpoints | {
+            "all_" + node.__name__: DjangoFilterConnectionField(node),
+            node.__name__: relay.Node.Field(node),
+        }
+    Query = OtherObjectsMeta(name, (ObjectType,), endpoints)
+    return Query
+
+
+nodes = dict(node_factory(inventory_models))
+
+InventoryQuery = query_factory("InventoryQuery", nodes.values())
