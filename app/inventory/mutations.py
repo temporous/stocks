@@ -41,6 +41,17 @@ class UpdatePortfolioForm(forms.ModelForm):
         return super().is_valid(*args, **kwargs)
 
 
+class TradeForm(forms.ModelForm):
+    class Meta:
+        model = Trade
+        fields = (
+            "portfolio",
+            "stock",
+            "price",
+            "volume",
+        )
+
+
 class CreatePortfolio(DjangoModelFormMutation):
     Portfolio = Field(nodes[Portfolio])
 
@@ -53,3 +64,35 @@ class UpdatePortfolio(DjangoModelFormMutation):
 
     class Meta:
         form_class = UpdatePortfolioForm
+
+
+class BuyStock(DjangoModelFormMutation):
+    Trade = Field(nodes[Trade])
+
+    class Meta:
+        form_class = TradeForm
+
+    @classmethod
+    def perform_mutate(cls, form, info):
+        obj = form.save(commit=False)
+        obj.trade_type = Trade.TradeTypes.BUY.value
+        obj.save()
+        kwargs = {cls._meta.return_field_name: obj}
+        return cls(errors=[], **kwargs)
+
+
+class SellStock(DjangoModelFormMutation):
+    Trade = Field(nodes[Trade])
+
+    class Meta:
+        form_class = TradeForm
+
+    @classmethod
+    def perform_mutate(cls, form, info):
+        obj = form.save(commit=False)
+        obj.trade_type = Trade.TradeTypes.SELL.value
+        obj.save()
+        kwargs = {cls._meta.return_field_name: obj}
+        return cls(errors=[], **kwargs)
+
+
